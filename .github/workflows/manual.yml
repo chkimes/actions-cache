@@ -1,0 +1,32 @@
+# This is a basic workflow that is manually triggered
+
+name: Azure SDK repeat
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  greet:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Runs a single command using the runners shell
+    - uses: actions/cache@master
+      id: known-random
+      name: Cache
+      with:
+        path: random
+        key: random
+        
+    - name: Generate pseudo-random
+      if: steps.known-random.outputs.cache-hit != 'true'
+      run: mkdir random && head -c 1G /dev/zero | openssl enc -pbkdf2 -aes-256-ctr -nosalt -pass pass:random > random/random.bin
+      
+    - name: Expect SHA
+      run: sha256sum random/random.bin | grep 83a3cdbd18864e09ca19ad2dba24f1abfa3e7b93f41def4ca504eb917728c460
