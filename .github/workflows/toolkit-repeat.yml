@@ -17,7 +17,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Runs a single command using the runners shell
-    - uses: chkimes/actions-cache@master
+    - uses: chkimes/actions-cache@main
       id: known-random
       name: Cache
       with:
