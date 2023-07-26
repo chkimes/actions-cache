@@ -45017,11 +45017,12 @@ exports.downloadCacheHttpClient = downloadCacheHttpClient;
 function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const archiveDescriptor = fs.openSync(archivePath, 'w');
+        const archiveDescriptor = yield fs.promises.open(archivePath, 'w');
+        const httpClient = new actions_http_client_1.HttpClient('actions/cache', undefined, {
+            socketTimeout: options.timeoutInMs,
+            keepAlive: true
+        });
         try {
-            const httpClient = new actions_http_client_1.HttpClient('actions/cache', undefined, {
-                socketTimeout: options.timeoutInMs
-            });
             const res = yield (0, requestUtils_1.retryHttpClientResponse)('downloadCacheMetadata', () => __awaiter(this, void 0, void 0, function* () { return yield httpClient.request('HEAD', archiveLocation, null, {}); }));
             const lengthHeader = res.message.headers['content-length'];
             if (lengthHeader === undefined || lengthHeader === null) {
@@ -45053,7 +45054,7 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             let nextDownload;
             const waitAndWrite = () => __awaiter(this, void 0, void 0, function* () {
                 const segment = yield Promise.race(Object.values(activeDownloads));
-                fs.writeSync(archiveDescriptor, segment.buffer, 0, segment.count, segment.offset);
+                yield archiveDescriptor.write(segment.buffer, 0, segment.count, segment.offset);
                 actives--;
                 delete activeDownloads[segment.offset];
                 bytesDownloaded += segment.count;
@@ -45071,7 +45072,8 @@ function downloadCacheHttpClientConcurrent(archiveLocation, archivePath, options
             }
         }
         finally {
-            fs.closeSync(archiveDescriptor);
+            httpClient.dispose();
+            yield archiveDescriptor.close();
         }
     });
 }
@@ -48491,7 +48493,14 @@ const restoreImpl_1 = __importDefault(__webpack_require__(835));
 const stateProvider_1 = __webpack_require__(309);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield (0, restoreImpl_1.default)(new stateProvider_1.StateProvider());
+        try {
+            yield (0, restoreImpl_1.default)(new stateProvider_1.StateProvider());
+        }
+        catch (err) {
+            console.error(err);
+            process.exit(1);
+        }
+        process.exit(0);
     });
 }
 run();
